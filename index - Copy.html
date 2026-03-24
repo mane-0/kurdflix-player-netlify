@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Player</title>
+    
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    
+    <style>
+        :root {
+            /* ڕەنگی سووری تایبەت بە تۆ */
+            --plyr-color-main: #e50914;
+            --plyr-video-control-color: #ffffff;
+            --plyr-video-control-color-hover: #ffffff;
+        }
+        
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            height: 100%; 
+            background: #000; 
+            overflow: hidden; 
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        #player-container {
+            position: fixed; 
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* =========================================
+           دیزاینە نوێیە شووشەیی و سەردەمیانەکە
+           ========================================= */
+        
+        /* دیزاینی شریتی کۆنتڕۆڵەکانی خوارەوە بە ستایلی Glassmorphism */
+        .plyr--video .plyr__controls {
+            background: rgba(20, 20, 20, 0.25) !important;
+            backdrop-filter: blur(16px) !important;
+            -webkit-backdrop-filter: blur(16px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            border-radius: 16px !important;
+            margin: 20px !important; /* وا دەکات شریتەکە کەمێک بەرزبێتەوە و جیاواز دەرکەوێت */
+            padding: 10px 15px !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+            transition: all 0.4s ease;
+        }
+
+        /* دوگمەی پلەی گەورەی ناوەڕاستی ڤیدیۆکە */
+        .plyr__control--overlaid {
+            background: rgba(20, 20, 20, 0.4) !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+            padding: 22px !important;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+        }
+
+        /* ئیفێکتی کاتی بردنە سەر دوگمەی پلەی گەورەکە */
+        .plyr__control--overlaid:hover {
+            transform: scale(1.15) !important;
+            background: var(--plyr-color-main) !important;
+            border-color: transparent !important;
+            box-shadow: 0 10px 40px rgba(229, 9, 20, 0.4) !important;
+        }
+
+        /* دیزاینی Tooltip (ئەو تێکستەی کاتێک دەچیتە سەر دوگمەکان دەردەکەوێت) */
+        .plyr__tooltip {
+            background: rgba(15, 15, 15, 0.7) !important;
+            backdrop-filter: blur(8px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 8px !important;
+            font-size: 13px !important;
+            font-weight: 500 !important;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
+        }
+
+        /* تۆزێک سێبەر بۆ ئایکۆنەکانی ناو کۆنتڕۆڵەکە تا ڕوونتر بن */
+        .plyr__controls button {
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+        }
+        
+        /* گۆڕینی شێوەی خاڵی ڕاکێشانی کات (Progress Thumb) */
+        .plyr__progress__thumb {
+            box-shadow: 0 0 10px rgba(229, 9, 20, 0.6) !important;
+        }
+    </style>
+</head>
+<body>
+
+<div id="player-container">
+    <video id="player" playsinline controls preload="metadata"
+           poster="https://i.postimg.cc/N0TsNXr0/film-daspeek-thumbnale.png">
+        <source src="" type="video/mp4" />
+    </video>
+</div>
+
+<script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // ١. وەرگرتنی لینک لە سەرەوەی وێبگەڕ (?src=...)
+        const urlParams = new URLSearchParams(window.location.search);
+        const videoUrl = urlParams.get('src');
+        
+        const videoElement = document.querySelector('#player source');
+        const videoTag = document.querySelector('#player');
+        
+        if (videoUrl) {
+            // لینکەکە دەخاتە ناو ڤیدیۆکەوە
+            videoElement.setAttribute('src', videoUrl);
+
+            // پشکنین: ئایا مۆبایلە؟
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+            if (isMobile) {
+                // ئەگەر مۆبایل بوو: پلەیەری سادە (Native) بەکاربهێنە تا فول سکرین تێک نەچێت
+                videoTag.load();
+            } else {
+                // ئەگەر کۆمپیوتەر بوو: دیزاینە تایبەتەکەی تۆ بەکاربهێنە
+                
+                // چالاککردنی Plyr (بەبێ بەشی کوالێتی و بێ دوگمەی زیادە)
+                const player = new Plyr('#player', {
+                    controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
+                    keyboard: { focused: true, global: true }
+                });
+
+                videoTag.load();
+            }
+
+        } else {
+            document.body.innerHTML = '<h2 style="color:white;text-align:center;">هیچ فایلێک دیاری نەکراوە</h2>';
+        }
+    });
+</script>
+
+</body>
+</html>
