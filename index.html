@@ -1,39 +1,132 @@
-<div id='video-container' style='position: relative; width: 100%; background: #000; border-radius: 15px; overflow: hidden; aspect-ratio: 16 / 9;'>
-  
-  <iframe allowfullscreen='true' expr:src='data:movie.player[0]' frameborder='0' id='movie_player' scrolling='no' style='width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1;'/>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KurdFlix Ultimate Player</title>
+    
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    
+    <style>
+        :root { --plyr-color-main: #e50914; }
+        body, html { margin: 0; padding: 0; height: 100%; background: #000; overflow: hidden; font-family: Tahoma, sans-serif; }
+        #player-container { width: 100%; height: 100%; position: relative; background: #000; }
+        
+        /* Glassmorphism Controls */
+        .plyr--video .plyr__controls {
+            background: rgba(20, 20, 20, 0.4) !important;
+            backdrop-filter: blur(15px) !important;
+            -webkit-backdrop-filter: blur(15px) !important;
+            border-radius: 12px !important;
+            margin: 10px !important;
+        }
 
-  <div id='ads-overlay' style='position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; cursor: pointer; background: rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center;'>
-    <div style='background: rgba(229, 9, 20, 0.9); color: white; padding: 15px 30px; border-radius: 50px; font-weight: bold; font-size: 18px;'>
-       کلیک بکە بۆ بینین <i class='fa fa-play' style='margin-right: 10px;'/>
+        /* Ad Overlay - دەبێت لە ناو فوول سکرین دیار بێت */
+        #ad-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 2147483647; display: none;
+        }
+        
+        #ad-video { width: 100%; height: 100%; object-fit: contain; }
+
+        #skip-btn {
+            position: absolute; bottom: 50px; right: 20px;
+            background: rgba(0, 0, 0, 0.8); border: 1px solid rgba(255,255,255,0.3);
+            color: #fff; padding: 12px 24px; cursor: pointer;
+            font-size: 15px; border-radius: 50px; z-index: 2147483647;
+            display: block; direction: rtl;
+        }
+
+        /* لادانی بانەری پۆز */
+        #pause-banner { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div id="player-container">
+    <div id="ad-overlay">
+        <video id="ad-video" playsinline webkit-playsinline>
+            <source src="لینکی_ڤیدیۆی_ڕیکلامەکەت_لێرە_دابنێ.mp4" type="video/mp4">
+        </video>
+        <div id="skip-btn">چاوەڕێ بکە (10)</div>
     </div>
-  </div>
 
+    <video id="player" playsinline webkit-playsinline controls poster="https://i.postimg.cc/N0TsNXr0/film-daspeek-thumbnale.png">
+        <source src="" type="video/mp4" />
+    </video>
 </div>
 
-<script type='text/javascript'>
-//<![CDATA[
-  const container = document.getElementById('video-container');
-  const overlay = document.getElementById('ads-overlay');
+<script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const videoUrl = urlParams.get('src');
+        
+        const container = document.getElementById('player-container');
+        const mainVideo = document.getElementById('player');
+        const adOverlay = document.getElementById('ad-overlay');
+        const adVideo = document.getElementById('ad-video');
+        const skipBtn = document.getElementById('skip-btn');
 
-  overlay.addEventListener('click', function() {
-    
-    // 1. لێرەدا کۆدی Adsterra (Direct Link) یان هەر ڕیکلامێکی تر دادەنێیت
-    // بۆ نموونە کردنەوەی لۆکاڵ نۆتیفیکەیشن یان پۆپ ئەندەر
-    window.open('لینکە_تایبەتەکەی_ئەدستێرا_لێرە_دابنێ', '_blank');
+        if (!videoUrl) return;
 
-    // 2. بردنە ناو فوول سکرین بۆ ئەوەی ڕیکلامەکە لە دەرەوە نەمێنێت
-    if (container.requestFullscreen) {
-      container.requestFullscreen();
-    } else if (container.mozRequestFullScreen) {
-      container.mozRequestFullScreen();
-    } else if (container.webkitRequestFullscreen) {
-      container.webkitRequestFullscreen();
-    } else if (container.msRequestFullscreen) {
-      container.msRequestFullscreen();
-    }
+        const player = new Plyr('#player', {
+            controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
+            fullscreen: { enabled: true, fallback: true, iosNative: true }
+        });
 
-    // 3. لابردنی داپۆشەرەکە بۆ ئەوەی فیلمەکە دەست پێ بکات
-    overlay.style.display = 'none';
-  });
-//]]>
+        mainVideo.src = videoUrl;
+
+        let adPlayed = false;
+
+        // کاتێک کلیک لە پلەی دەکات
+        player.on('play', () => {
+            if (!adPlayed) {
+                // سەرەتا دەچینە ناو فوول سکرین
+                if (!player.fullscreen.active) {
+                    player.fullscreen.enter();
+                }
+                
+                player.pause();
+                startAd();
+            }
+        });
+
+        function startAd() {
+            adPlayed = true;
+            adOverlay.style.display = 'block';
+            adVideo.play().catch(e => {
+                console.log("Autoplay blocked, showing skip button early");
+                closeAd(); 
+            });
+
+            let timeLeft = 10;
+            const timer = setInterval(() => {
+                timeLeft--;
+                if (timeLeft > 0) {
+                    skipBtn.innerText = `تێپەڕاندنی ڕیکلام (${timeLeft})`;
+                } else {
+                    clearInterval(timer);
+                    skipBtn.innerText = 'تێپەڕاندنی ڕیکلام';
+                    skipBtn.onclick = closeAd;
+                }
+            }, 1000);
+        }
+
+        function closeAd() {
+            adVideo.pause();
+            adOverlay.style.display = 'none';
+            player.play(); // لێرەدا دەست بە فیلمەکە دەکاتەوە هەر لە ناو فوول سکرین
+        }
+
+        // بۆ ئەوەی ڕیکلامەکە لە ناو فوول سکرین تێکنەچێت
+        player.on('enterfullscreen', () => {
+            if (adOverlay.style.display === 'block') {
+                adOverlay.style.zIndex = "2147483647";
+            }
+        });
+    });
 </script>
+
+</body>
+</html>
