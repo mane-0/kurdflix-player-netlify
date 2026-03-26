@@ -1,69 +1,39 @@
-<div class='player-container' id='playerWrapper' style='position: relative; width: 100%; background: #000; border-radius: 12px; overflow: hidden;'>
-    
-    <div id='adContainer' style='position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 999; display: none; background: #000;'>
-        <video id='adVideo' playsinline='' style='width: 100%; height: 100%; object-fit: contain;'>
-            <source src='لینک_ی_ڤیدیۆی_ڕیکلامەکە_لێرە_دابنێ.mp4' type='video/mp4'/>
-        </video>
-        <div id='adSkip' style='position: absolute; bottom: 20px; right: 20px; background: rgba(0,0,0,0.7); color: #fff; padding: 10px 20px; border-radius: 5px; cursor: pointer; display: none; font-family: Tahoma;'>
-            بازدان لە ڕیکلام
-        </div>
-        <div id='adTimer' style='position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.5); color: #fff; padding: 5px 15px; border-radius: 20px; font-size: 13px;'>
-            ڕیکلام: <span id='timeLeft'>0</span> چرکە
-        </div>
+<div id='video-container' style='position: relative; width: 100%; background: #000; border-radius: 15px; overflow: hidden; aspect-ratio: 16 / 9;'>
+  
+  <iframe allowfullscreen='true' expr:src='data:movie.player[0]' frameborder='0' id='movie_player' scrolling='no' style='width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1;'/>
+
+  <div id='ads-overlay' style='position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; cursor: pointer; background: rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center;'>
+    <div style='background: rgba(229, 9, 20, 0.9); color: white; padding: 15px 30px; border-radius: 50px; font-weight: bold; font-size: 18px;'>
+       کلیک بکە بۆ بینین <i class='fa fa-play' style='margin-right: 10px;'/>
     </div>
+  </div>
 
-    <iframe allowfullscreen='true' expr:src='data:movie.player[0]' frameborder='0' height='500' id='main__iframe' scrolling='no' style='width: 100%; display: block;' webkitallowfullscreen='true' mozallowfullscreen='true'/>
-
-    <div id='playerOverlay' style='position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; cursor: pointer; background: rgba(0,0,0,0);'/>
 </div>
 
 <script type='text/javascript'>
 //<![CDATA[
-const playerWrapper = document.getElementById('playerWrapper');
-const adContainer = document.getElementById('adContainer');
-const adVideo = document.getElementById('adVideo');
-const adSkip = document.getElementById('adSkip');
-const timeLeft = document.getElementById('timeLeft');
-const playerOverlay = document.getElementById('playerOverlay');
-const mainIframe = document.getElementById('main__iframe');
+  const container = document.getElementById('video-container');
+  const overlay = document.getElementById('ads-overlay');
 
-// کاتێک بەکارهێنەر کلیک لەسەر پلەیەرەکە دەکات
-playerOverlay.addEventListener('click', function() {
-    // پیشاندانی ڕیکلامەکە
-    adContainer.style.display = 'block';
-    playerOverlay.style.display = 'none'; // لایببە بۆ ئەوەی کلیک لە ناو ڕیکلامەکە بکرێت
+  overlay.addEventListener('click', function() {
     
-    // بردنە ناو فوول سکرین (بۆ هەموو ئامێرەکان)
-    if (playerWrapper.requestFullscreen) {
-        playerWrapper.requestFullscreen();
-    } else if (playerWrapper.webkitRequestFullscreen) {
-        playerWrapper.webkitRequestFullscreen();
-    } else if (playerWrapper.msRequestFullscreen) {
-        playerWrapper.msRequestFullscreen();
+    // 1. لێرەدا کۆدی Adsterra (Direct Link) یان هەر ڕیکلامێکی تر دادەنێیت
+    // بۆ نموونە کردنەوەی لۆکاڵ نۆتیفیکەیشن یان پۆپ ئەندەر
+    window.open('لینکە_تایبەتەکەی_ئەدستێرا_لێرە_دابنێ', '_blank');
+
+    // 2. بردنە ناو فوول سکرین بۆ ئەوەی ڕیکلامەکە لە دەرەوە نەمێنێت
+    if (container.requestFullscreen) {
+      container.requestFullscreen();
+    } else if (container.mozRequestFullScreen) {
+      container.mozRequestFullScreen();
+    } else if (container.webkitRequestFullscreen) {
+      container.webkitRequestFullscreen();
+    } else if (container.msRequestFullscreen) {
+      container.msRequestFullscreen();
     }
 
-    adVideo.play();
-});
-
-// نوێکردنەوەی کاتی ڕیکلامەکە
-adVideo.ontimeupdate = function() {
-    let remain = Math.round(adVideo.duration - adVideo.currentTime);
-    timeLeft.innerText = remain;
-    
-    // دوای ٥ چرکە دوگمەی بازدان دەرکەوێت
-    if (adVideo.currentTime > 5) {
-        adSkip.style.display = 'block';
-    }
-};
-
-// کاتێک ڕیکلامەکە تەواو دەبێت یان بازدەدرێت
-function finishAd() {
-    adVideo.pause();
-    adContainer.style.display = 'none';
-    // لێرەدا پلەیەرە سەرەکییەکە دەست پێ دەکات بە بێ ئەوەی لە فوول سکرین بێتە دەرەوە
-}
-
-adSkip.onclick = finishAd;
-adVideo.onended = finishAd;
+    // 3. لابردنی داپۆشەرەکە بۆ ئەوەی فیلمەکە دەست پێ بکات
+    overlay.style.display = 'none';
+  });
 //]]>
 </script>
