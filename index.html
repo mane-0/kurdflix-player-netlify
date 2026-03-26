@@ -2,66 +2,59 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KurdFlix Player - Ads Ready</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KurdFlix Ultimate Player</title>
     
     <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
     
     <style>
-        :root {
-            --plyr-color-main: #e50914;
-        }
+        :root { --plyr-color-main: #e50914; }
+        body, html { margin: 0; padding: 0; height: 100%; background: #000; overflow: hidden; }
+        #player-container { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #000; }
         
-        body, html { margin: 0; padding: 0; height: 100%; background: #000; overflow: hidden; font-family: sans-serif; }
-        #player-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
-        
-        /* ستایلی Glassmorphism بۆ پلەیەرەکە */
+        /* Glassmorphism Controls */
         .plyr--video .plyr__controls {
             background: rgba(20, 20, 20, 0.25) !important;
-            backdrop-filter: blur(16px) !important;
-            border: 1px solid rgba(255, 255, 255, 0.08) !important;
-            border-radius: 16px !important;
-            margin: 20px !important;
+            backdrop-filter: blur(15px) !important;
+            -webkit-backdrop-filter: blur(15px) !important;
+            border-radius: 12px !important;
+            margin: 10px !important;
         }
 
-        /* --- بەشی ڕیکلامی ڤیدیۆیی --- */
+        /* Ad Overlay Layout */
         #ad-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 10; display: none;
+            background: #000; z-index: 2147483647; display: none;
         }
         #skip-btn {
-            position: absolute; bottom: 80px; right: 20px;
-            background: rgba(0, 0, 0, 0.7); border: 1px solid #fff;
-            color: #fff; padding: 10px 20px; cursor: pointer;
-            font-size: 14px; border-radius: 4px; display: none; z-index: 11;
+            position: absolute; bottom: 100px; right: 20px;
+            background: rgba(0, 0, 0, 0.8); border: 1px solid rgba(255,255,255,0.3);
+            color: #fff; padding: 12px 24px; cursor: pointer;
+            font-size: 15px; border-radius: 50px; z-index: 2147483647;
         }
 
-        /* --- بەشی ڕیکلامی بانەر لەکاتی پۆز --- */
         #pause-banner {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 5; display: none; max-width: 80%;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            z-index: 100; display: none; width: 300px;
         }
-        #pause-banner img { width: 100%; border-radius: 8px; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        #pause-banner img { width: 100%; border-radius: 10px; border: 2px solid #e50914; }
     </style>
 </head>
 <body>
 
 <div id="player-container">
     <div id="ad-overlay">
-        <video id="ad-video" style="width:100%; height:100%; object-fit: contain;">
-            <source src="لێرە_لینکی_ڤیدیۆی_ڕیکلامەکە_دابنێ.mp4" type="video/mp4">
+        <video id="ad-video" playsinline webkit-playsinline style="width:100%; height:100%;">
+            <source src="لینکی_ڤیدیۆی_ڕیکلامی_ناوخۆیی.mp4" type="video/mp4">
         </video>
-        <div id="skip-btn">تێپەڕاندنی ڕیکلام (١٠)</div>
+        <div id="skip-btn">چاوەڕێ بکە (10)</div>
     </div>
 
     <div id="pause-banner">
-        <a href="لێرە_لینکی_ماڵپەڕی_ڕیکلامەکە_دابنێ" target="_blank">
-            <img src="https://i.postimg.cc/Gp4xSs3k/kurdflix-ads-2-980x120-px.gif" alt="Advertisement">
-        </a>
+        <a href="لینکی_ڕیکلام" target="_blank"><img src="وێنەی_ڕیکلام.jpg"></a>
     </div>
 
-    <video id="player" playsinline controls poster="https://i.postimg.cc/N0TsNXr0/film-daspeek-thumbnale.png">
+    <video id="player" playsinline webkit-playsinline controls poster="https://i.postimg.cc/N0TsNXr0/film-daspeek-thumbnale.png">
         <source src="" type="video/mp4" />
     </video>
 </div>
@@ -71,6 +64,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
         const videoUrl = urlParams.get('src');
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         
         const mainVideo = document.getElementById('player');
         const adOverlay = document.getElementById('ad-overlay');
@@ -78,41 +72,42 @@
         const skipBtn = document.getElementById('skip-btn');
         const pauseBanner = document.getElementById('pause-banner');
 
-        if (!videoUrl) {
-            document.body.innerHTML = '<h2 style="color:white;text-align:center;">فیلمەکە نەدۆزرایەوە</h2>';
-            return;
-        }
+        if (!videoUrl) return;
 
-        // ١. ڕێکخستنی پلەیەر
+        // ئەگەر ئایفۆن بوو، هەوڵدەدەین ڕێگری لە Fullscreen ی خۆکار بکەین
+        mainVideo.setAttribute('webkit-playsinline', 'true');
+        mainVideo.setAttribute('playsinline', 'true');
+
         const player = new Plyr('#player', {
             controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
+            fullscreen: { iosNative: true } // ئەمە گرنگە بۆ ئایفۆن
         });
+
         mainVideo.querySelector('source').src = videoUrl;
         mainVideo.load();
 
-        // ٢. لۆجیکی ڕیکلامی ڤیدیۆیی
         let adPlayed = false;
+
         player.on('play', () => {
             if (!adPlayed) {
                 player.pause();
-                showAd();
+                if (player.fullscreen.active) player.fullscreen.exit();
+                startAd();
             }
         });
 
-        function showAd() {
+        function startAd() {
             adPlayed = true;
             adOverlay.style.display = 'block';
-            adVideo.play();
+            adVideo.play().catch(() => { closeAd(); });
 
             let timeLeft = 10;
             const timer = setInterval(() => {
                 timeLeft--;
-                skipBtn.style.display = 'block';
-                skipBtn.innerText = `تێپەڕاندن (${timeLeft})`;
-                
+                skipBtn.innerText = `تێپەڕاندنی ڕیکلام (${timeLeft})`;
                 if (timeLeft <= 0) {
                     clearInterval(timer);
-                    skipBtn.innerText = 'تێپەڕاندنی ڕیکلام';
+                    skipBtn.innerText = 'تێپەڕاندن';
                     skipBtn.onclick = closeAd;
                 }
             }, 1000);
@@ -124,13 +119,8 @@
             player.play();
         }
 
-        // ٣. لۆجیکی بانەر لەکاتی پۆز (Pause)
-        player.on('pause', () => {
-            if (adPlayed) pauseBanner.style.display = 'block';
-        });
-        player.on('play', () => {
-            pauseBanner.style.display = 'none';
-        });
+        player.on('pause', () => { if(adPlayed) pauseBanner.style.display = 'block'; });
+        player.on('play', () => { pauseBanner.style.display = 'none'; });
     });
 </script>
 
